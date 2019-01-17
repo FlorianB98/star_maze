@@ -4,7 +4,7 @@ class Planet {
         this.y = y
         this.r = r
         this.skin = skin
-        this.click = click
+        this.click = false
     }
 }
 export default Planet
