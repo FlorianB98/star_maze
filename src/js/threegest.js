@@ -2,13 +2,17 @@ import * as THREE from 'three'
 import Planet from './planet/planetClass.js'
 import Particules from './planet/ParticulesClass.js'
 
+var raycaster = new THREE.Raycaster();
+var mouse = new THREE.Vector2();
+
 const textureLoader = new THREE.TextureLoader()
 /**
  * maze creation
  */
-const n = 16
+const n = 9
 const n2 = Math.sqrt(n)
 let maze
+let aChange = false
 
 function mazegene(n2){
     let generator = require('generate-maze')
@@ -41,18 +45,9 @@ if (n === 42 ){
     position = 200
 }
 let touch = false
-let planetTab= []
-
-/**
- * Textures
- */
-// const textureLoader = new THREE.TextureLoader()
-
-// const grassTexture = textureLoader.load(grassTextureSource)
-// grassTexture.wrapS = THREE.RepeatWrapping
-// grassTexture.wrapT = THREE.RepeatWrapping
-// grassTexture.repeat.x = 4
-// grassTexture.repeat.y = 4
+let planetTab = []
+let starTab = []
+let meshLineTab = []
 
 /**
  * Sizes
@@ -75,18 +70,7 @@ window.addEventListener('resize', () =>
     renderer.setSize(sizes.width, sizes.height)
 })
 
-/**
- * Cursor
- */
-const cursor = {}
-cursor.x = 0
-cursor.y = 0
 
-// window.addEventListener('mousemove', (_event) =>
-// {
-//     cursor.x = _event.clientX / sizes.width - 0.75
-//     cursor.y = _event.clientY / sizes.height - 0.75
-// })
 
 /**
  * Scene
@@ -107,6 +91,8 @@ scene.add(space)
  * creation of planets
  */
 
+let star = new THREE.Mesh()
+
 for(let i = 0; i < n; i++)
 {
     const radius = Math.floor(Math.random() * (2.5 - 2.5 + 1)) + 2.5;
@@ -124,7 +110,7 @@ for(let i = 0; i < n; i++)
         material = new THREE.MeshBasicMaterial({color: 0xffffff })
     }
 
-    const star = new THREE.Mesh(
+    star = new THREE.Mesh(
         new THREE.SphereGeometry(radius,26,26),material
     )
     star.position.x = ((Math.random() - 0.5) * expention)
@@ -142,6 +128,7 @@ for(let i = 0; i < n; i++)
 
 
     planetTab.push(planet)
+    starTab.push(star)
 
     /**
     *repartition
@@ -151,6 +138,7 @@ for(let i = 0; i < n; i++)
     if (planetTab.length>1)
     {
         while (!test){
+            let k = 0
             for(let j = 0; j < planetTab.length-1; j++){
 
                 /**
@@ -164,10 +152,7 @@ for(let i = 0; i < n; i++)
                         (planet.z - planetTab[j].z)*(planet.z - planetTab[j].z)) ) 
                         <= radius*5){
                   
-                        planet.x = star.position.x = ((Math.random() - 0.5) * expention)
-                        planet.z = star.position.z = ((Math.random() - 0.5) * expention)
-                        planet.y = star.position.y = ((Math.random() - 0.5) * expention)
-                        j=0
+                        randSpace(planet, j, k)
                 }
 
                 /**
@@ -176,18 +161,14 @@ for(let i = 0; i < n; i++)
 
                 let sideOne = Math.sqrt(  ((planet.y - planetTab[j].y)*(planet.y - planetTab[j].y) + (planet.x - planetTab[j].x)*(planet.x - planetTab[j].x) + (planet.z - planetTab[j].z)*(planet.z - planetTab[j].z)) )
 
-                for (let k = 0; k < planetTab.length-1; k++){
+                for (k = 0; k < planetTab.length-1; k++){
                     if(k!=j){
                         let sideTwo = Math.sqrt(  ((planet.y - planetTab[k].y)*(planet.y - planetTab[k].y) + (planet.x - planetTab[k].x)*(planet.x - planetTab[k].x) + (planet.z - planetTab[k].z)*(planet.z - planetTab[k].z)) )
                         let sideThree= Math.sqrt(  ((planetTab[k].y - planetTab[j].y)*(planetTab[k].y - planetTab[j].y) + (planetTab[k].x - planetTab[j].x)*(planetTab[k].x - planetTab[j].x) + (planetTab[k].z - planetTab[j].z)*(planetTab[k].z - planetTab[j].z)) )
                         let p = (1/2)*(sideOne + sideTwo + sideThree)
                         let H = (2 * Math.sqrt(p*(p-sideOne)*(p-sideTwo)*(p-sideThree)))/sideOne
-                        if (H < (radius*2,5)){
-                            planet.x = star.position.x = ((Math.random() - 0.5) * expention)
-                            planet.z = star.position.z = ((Math.random() - 0.5) * expention)
-                            planet.y = star.position.y = ((Math.random() - 0.5) * expention)
-                            j=0
-                            k=0
+                        if (H < (radius*2,7)){
+                            randSpace(planet, j, k)
                         }
                     }
             }
@@ -199,6 +180,7 @@ for(let i = 0; i < n; i++)
     }
 
     planetTab[planetTab.length-1] = planet
+    starTab[starTab.length-1] = star
 
     
     space.add(star)
@@ -209,7 +191,7 @@ for(let i = 0; i < n; i++)
  */
 
 /**
- * all line print
+ * grey line print
  */
 
 for (let i = 0; i<n ; i++){
@@ -217,71 +199,7 @@ for (let i = 0; i<n ; i++){
     let colonneTab = i - (Math.floor(i/n2)*n2)
     let lineTab = Math.floor(i/n2)
 
-    if (maze[lineTab][colonneTab].top === false){
-
-        var material = new THREE.LineBasicMaterial({
-            color: 0xA9A9A9
-        })
-        
-        var geometry = new THREE.Geometry();
-        geometry.vertices.push(
-            new THREE.Vector3(  planetTab[i].x, planetTab[i].y, planetTab[i].z ),
-            new THREE.Vector3(  planetTab[i-n2].x, planetTab[i-n2].y, planetTab[i-n2].z ),
-        );
-        
-        var line = new THREE.Line( geometry, material );
-        space.add( line );
-        
-
-    }
-    if (maze[lineTab][colonneTab].bottom === false){
-
-        var material = new THREE.LineBasicMaterial({
-            color: 0xA9A9A9
-        })
-        
-        var geometry = new THREE.Geometry();
-        geometry.vertices.push(
-            new THREE.Vector3(  planetTab[i].x, planetTab[i].y, planetTab[i].z ),
-            new THREE.Vector3(  planetTab[i+n2].x, planetTab[i+n2].y, planetTab[i+n2].z ),
-        );
-        
-        var line = new THREE.Line( geometry, material );
-        space.add( line );
-
-    }
-    if (maze[lineTab][colonneTab].right === false){
-
-        var material = new THREE.LineBasicMaterial({
-            color: 0xA9A9A9
-        })
-        
-        var geometry = new THREE.Geometry();
-        geometry.vertices.push(
-            new THREE.Vector3(  planetTab[i].x, planetTab[i].y, planetTab[i].z ),
-            new THREE.Vector3(  planetTab[i+1].x, planetTab[i+1].y, planetTab[i+1].z ),
-        );
-        
-        var line = new THREE.Line( geometry, material );
-        space.add( line );
-
-    }
-    if (maze[lineTab][colonneTab].left === false){
-
-        var material = new THREE.LineBasicMaterial({
-            color: 0xA9A9A9
-        })
-        
-        var geometry = new THREE.Geometry();
-        geometry.vertices.push(
-            new THREE.Vector3(  planetTab[i].x, planetTab[i].y, planetTab[i].z ),
-            new THREE.Vector3(  planetTab[i-1].x, planetTab[i-1].y, planetTab[i-1].z ),
-        );
-        
-        var line = new THREE.Line( geometry, material );
-        space.add( line );
-
-    }
+    grayLine(maze, lineTab, colonneTab, space, i, n2,planetTab)
 }
 
 /**
@@ -294,75 +212,13 @@ for (let i = 0; i<n ; i++){
     let lineTab = Math.floor(i/n2)
 
     if (planetTab[i].click === true){
-        
-    if (maze[lineTab][colonneTab].top === false){
 
-        var material = new THREE.LineBasicMaterial({
-            color: 0x0000ff
-        })
-        
-        var geometry = new THREE.Geometry();
-        geometry.vertices.push(
-            new THREE.Vector3(  planetTab[i].x, planetTab[i].y, planetTab[i].z ),
-            new THREE.Vector3(  planetTab[i-n2].x, planetTab[i-n2].y, planetTab[i-n2].z ),
-        );
-        
-        var line = new THREE.Line( geometry, material );
-        space.add( line );
-        
-
-    }
-    if (maze[lineTab][colonneTab].bottom === false){
-
-        var material = new THREE.LineBasicMaterial({
-            color: 0x0000ff
-        })
-        
-        var geometry = new THREE.Geometry();
-        geometry.vertices.push(
-            new THREE.Vector3(  planetTab[i].x, planetTab[i].y, planetTab[i].z ),
-            new THREE.Vector3(  planetTab[i+n2].x, planetTab[i+n2].y, planetTab[i+n2].z ),
-        );
-        
-        var line = new THREE.Line( geometry, material );
-        space.add( line );
-
-    }
-    if (maze[lineTab][colonneTab].right === false){
-
-        var material = new THREE.LineBasicMaterial({
-            color: 0x0000ff
-        })
-        
-        var geometry = new THREE.Geometry();
-        geometry.vertices.push(
-            new THREE.Vector3(  planetTab[i].x, planetTab[i].y, planetTab[i].z ),
-            new THREE.Vector3(  planetTab[i+1].x, planetTab[i+1].y, planetTab[i+1].z ),
-        );
-        
-        var line = new THREE.Line( geometry, material );
-        space.add( line );
-
-    }
-    if (maze[lineTab][colonneTab].left === false){
-
-        var material = new THREE.LineBasicMaterial({
-            color: 0x0000ff
-        })
-        
-        var geometry = new THREE.Geometry();
-        geometry.vertices.push(
-            new THREE.Vector3(  planetTab[i].x, planetTab[i].y, planetTab[i].z ),
-            new THREE.Vector3(  planetTab[i-1].x, planetTab[i-1].y, planetTab[i-1].z ),
-        );
-        
-        var line = new THREE.Line( geometry, material );
-        space.add( line );
-
-    }
+            
+        blueLine(maze, lineTab,colonneTab, space, i, n2,planetTab)
     }
 
 }
+console.log(meshLineTab)
 
 
 /**
@@ -424,6 +280,36 @@ window.addEventListener('mousedown', function (event) {
         }
     })
 
+
+/**
+ * Game gestion
+ */
+
+
+window.addEventListener( 'click', onMouseClick, true );
+
+function onMouseClick( event ) {
+    mouse.x = ( event.clientX / renderer.domElement.clientWidth ) * 2 - 1;
+    mouse.y = -( event.clientY / renderer.domElement.clientHeight ) * 2 + 1;
+    raycaster.setFromCamera( mouse, camera );
+    for (let i = 0; i<starTab.length;i++){
+        let intersects = raycaster.intersectObject(starTab[i]);
+        if ( intersects.length > 0 ) {
+
+            for (let j = 0 ; j < planetTab.length ; j++){
+                planetTab[j].click = false
+            }
+
+            planetTab[i].click = true
+
+            aChange = true
+
+            i = starTab.length+1
+
+        }
+    }
+}
+
 /**
  * Loop
  */
@@ -436,7 +322,45 @@ const loop = () =>
         space.rotation.y += 0.003
     }
 
-    // Update camera
+    //update placement
+    if(aChange){
+
+        for (let i = 0; i<meshLineTab.length;i++){
+            space.remove(meshLineTab[i])
+            meshLineTab.splice(i)
+        }
+
+        /**
+ * grey line print
+ */
+
+        for (let i = 0; i<n ; i++){
+
+            let colonneTab = i - (Math.floor(i/n2)*n2)
+            let lineTab = Math.floor(i/n2)
+
+            grayLine(maze, lineTab, colonneTab, space, i, n2,planetTab)
+        }
+
+        /**
+         * blue line print
+         */
+
+        for (let i = 0; i<n ; i++){
+
+            let colonneTab = i - (Math.floor(i/n2)*n2)
+            let lineTab = Math.floor(i/n2)
+
+            if (planetTab[i].click === true){
+
+                    
+                blueLine(maze, lineTab,colonneTab, space, i, n2,planetTab)
+            }
+
+        }
+        aChange = false
+        console.log(meshLineTab)
+    }
     
     
     // Renderer
@@ -454,3 +378,165 @@ loop()
 //         console.log('dispose')
 //     })
 // }
+
+
+
+
+/**
+ * 
+ * 
+ * FUNCTION
+ * 
+ * 
+ */
+
+
+
+
+function randSpace(planet, j, k){
+
+    planet.x = star.position.x = ((Math.random() - 0.5) * expention)
+    planet.z = star.position.z = ((Math.random() - 0.5) * expention)
+    planet.y = star.position.y = ((Math.random() - 0.5) * expention)
+    j=0
+    k=0
+}
+
+function grayLine (maze, lineTab, colonneTab, space, i, n2, planetTab){
+
+    if (maze[lineTab][colonneTab].top === false){
+
+        var material = new THREE.LineBasicMaterial({
+            color: 0xA9A9A9
+        })
+        
+        var geometry = new THREE.Geometry();
+        geometry.vertices.push(
+            new THREE.Vector3(  planetTab[i].x, planetTab[i].y, planetTab[i].z ),
+            new THREE.Vector3(  planetTab[i-n2].x, planetTab[i-n2].y, planetTab[i-n2].z ),
+        );
+        
+        var line = new THREE.Line( geometry, material );
+        space.add( line );
+        
+
+    }
+    if (maze[lineTab][colonneTab].bottom === false){
+
+        var material = new THREE.LineBasicMaterial({
+            color: 0xA9A9A9
+        })
+        
+        var geometry = new THREE.Geometry();
+        geometry.vertices.push(
+            new THREE.Vector3(  planetTab[i].x, planetTab[i].y, planetTab[i].z ),
+            new THREE.Vector3(  planetTab[i+n2].x, planetTab[i+n2].y, planetTab[i+n2].z ),
+        );
+        
+        var line = new THREE.Line( geometry, material );
+        space.add( line );
+
+    }
+    if (maze[lineTab][colonneTab].right === false){
+
+        var material = new THREE.LineBasicMaterial({
+            color: 0xA9A9A9
+        })
+        
+        var geometry = new THREE.Geometry();
+        geometry.vertices.push(
+            new THREE.Vector3(  planetTab[i].x, planetTab[i].y, planetTab[i].z ),
+            new THREE.Vector3(  planetTab[i+1].x, planetTab[i+1].y, planetTab[i+1].z ),
+        );
+        
+        var line = new THREE.Line( geometry, material );
+        space.add( line );
+
+    }
+    if (maze[lineTab][colonneTab].left === false){
+
+        var material = new THREE.LineBasicMaterial({
+            color: 0xA9A9A9
+        })
+        
+        var geometry = new THREE.Geometry();
+        geometry.vertices.push(
+            new THREE.Vector3(  planetTab[i].x, planetTab[i].y, planetTab[i].z ),
+            new THREE.Vector3(  planetTab[i-1].x, planetTab[i-1].y, planetTab[i-1].z ),
+        );
+        
+        var line = new THREE.Line( geometry, material );
+        space.add( line );
+
+    }
+    meshLineTab.push(line)
+}
+
+function blueLine (maze, lineTab, colonneTab, space, i, n2, planetTab){
+    if (maze[lineTab][colonneTab].top === false){
+
+        var material = new THREE.LineBasicMaterial({
+            color: 0x0000ff
+        })
+        
+        var geometry = new THREE.Geometry();
+        geometry.vertices.push(
+            new THREE.Vector3(  planetTab[i].x, planetTab[i].y, planetTab[i].z ),
+            new THREE.Vector3(  planetTab[i-n2].x, planetTab[i-n2].y, planetTab[i-n2].z ),
+        );
+        
+        var line = new THREE.Line( geometry, material );
+        space.add( line );
+        
+
+    }
+    if (maze[lineTab][colonneTab].bottom === false){
+
+        var material = new THREE.LineBasicMaterial({
+            color: 0x0000ff
+        })
+        
+        var geometry = new THREE.Geometry();
+        geometry.vertices.push(
+            new THREE.Vector3(  planetTab[i].x, planetTab[i].y, planetTab[i].z ),
+            new THREE.Vector3(  planetTab[i+n2].x, planetTab[i+n2].y, planetTab[i+n2].z ),
+        );
+        
+        var line = new THREE.Line( geometry, material );
+        space.add( line );
+
+    }
+    if (maze[lineTab][colonneTab].right === false){
+
+        var material = new THREE.LineBasicMaterial({
+            color: 0x0000ff
+        })
+        
+        var geometry = new THREE.Geometry();
+        geometry.vertices.push(
+            new THREE.Vector3(  planetTab[i].x, planetTab[i].y, planetTab[i].z ),
+            new THREE.Vector3(  planetTab[i+1].x, planetTab[i+1].y, planetTab[i+1].z ),
+        );
+        
+        var line = new THREE.Line( geometry, material );
+        space.add( line );
+
+    }
+    if (maze[lineTab][colonneTab].left === false){
+
+        var material = new THREE.LineBasicMaterial({
+            color: 0x0000ff
+        })
+        
+        var geometry = new THREE.Geometry();
+        geometry.vertices.push(
+            new THREE.Vector3(  planetTab[i].x, planetTab[i].y, planetTab[i].z ),
+            new THREE.Vector3(  planetTab[i-1].x, planetTab[i-1].y, planetTab[i-1].z ),
+        );
+        
+        var line = new THREE.Line( geometry, material );
+        space.add( line );
+
+    }
+    meshLineTab.push(line)
+}
