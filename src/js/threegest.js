@@ -9,7 +9,7 @@ const textureLoader = new THREE.TextureLoader()
 /**
  * maze creation
  */
-const n = 9
+const n = 36
 const n2 = Math.sqrt(n)
 let maze
 let aChange = false
@@ -125,6 +125,11 @@ for(let i = 0; i < n; i++)
     if (i === 0){
         planet.click = true
     }
+    if (i=== n-1){
+        planet.winner = true
+    }else{
+        planet.winner = false
+    }
 
 
     planetTab.push(planet)
@@ -218,7 +223,6 @@ for (let i = 0; i<n ; i++){
     }
 
 }
-console.log(meshLineTab)
 
 
 /**
@@ -292,20 +296,85 @@ function onMouseClick( event ) {
     mouse.x = ( event.clientX / renderer.domElement.clientWidth ) * 2 - 1;
     mouse.y = -( event.clientY / renderer.domElement.clientHeight ) * 2 + 1;
     raycaster.setFromCamera( mouse, camera );
+
     for (let i = 0; i<starTab.length;i++){
         let intersects = raycaster.intersectObject(starTab[i]);
         if ( intersects.length > 0 ) {
 
-            for (let j = 0 ; j < planetTab.length ; j++){
-                planetTab[j].click = false
+            let index1
+            for(let j = 0;j <planetTab.length;j++){
+                if (planetTab[j].click){
+                    index1 = j
+                }
             }
 
-            planetTab[i].click = true
+            //found maze case
+            let colonneTab = index1 - (Math.floor(index1/n2)*n2)
+            let lineTab = Math.floor(index1/n2)
 
-            aChange = true
+            
+            if (index1 - 1 === i){
+                if (!maze[lineTab][colonneTab].left){
+                    for (let y = 0; y<planetTab.length;y++){
+                        planetTab[y].click = false
+                    }
+                    planetTab[i].click = true
+                    aChange = true
+                    i = starTab.length
+                }
+            }
 
-            i = starTab.length+1
+            if (index1 + 1 === i){
+                if (!maze[lineTab][colonneTab].right){
+                    for (let y = 0; y<planetTab.length;y++){
+                        planetTab[y].click = false
+                    }
+                    planetTab[i].click = true
+                    aChange = true
+                    i = starTab.length
+                }
+            }
 
+            if (index1 + n2 === i){
+                if (!maze[lineTab][colonneTab].bottom){
+                    for (let y = 0; y<planetTab.length;y++){
+                        planetTab[y].click = false
+                    }
+                    planetTab[i].click = true
+                    aChange = true
+                    i = starTab.length
+                }
+            }
+
+            if (index1 - n2 === i){
+                if (!maze[lineTab][colonneTab].top){
+                    for (let y = 0; y<planetTab.length;y++){
+                        planetTab[y].click = false
+                    }
+                    planetTab[i].click = true
+                    aChange = true
+                    i = starTab.length
+                }
+            }
+
+
+            //old version
+
+            // for (let j = 0 ; j < planetTab.length ; j++){
+            //     planetTab[j].click = false
+            // }
+
+            // planetTab[i].click = true
+
+            // aChange = true
+
+            // i = starTab.length+1
+        }
+    }
+
+    for (let z = 0; z<planetTab.length;z++){
+        if( planetTab[z].click === true && planetTab[z].winner === true ){
+            alert('WIN')
         }
     }
 }
@@ -331,8 +400,8 @@ const loop = () =>
         }
 
         /**
- * grey line print
- */
+         * grey line print
+         */
 
         for (let i = 0; i<n ; i++){
 
@@ -359,7 +428,6 @@ const loop = () =>
 
         }
         aChange = false
-        console.log(meshLineTab)
     }
     
     
