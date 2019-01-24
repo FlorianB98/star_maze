@@ -1,7 +1,12 @@
 import * as THREE from 'three'
 import Planet from './planet/planetClass.js'
 import Particules from './planet/ParticulesClass.js'
-
+import Texture1 from '../images/skin_P1.jpg'
+import Texture2 from '../images/skin_P2.jpg'
+import Texture3 from '../images/skin_P3.jpg'
+import Texture4 from '../images/skin_P4.jpg'
+import Texture5 from '../images/skin_P5.jpg'
+import Texture6 from '../images/skin_P6.jpg'
 
 const enterSpace = (n) => {
 
@@ -102,9 +107,10 @@ const enterSpace = (n) => {
     
     for(let i = 0; i < n; i++)
     {
-        const radius = Math.floor(Math.random() * (2.5 - 2.5 + 1)) + 2.5;
-    
+        
         let material
+        
+        const radius = Math.floor(Math.random() * (3 - 3 + 1)) + 3;
     
         if(i===0){
             material = new THREE.MeshBasicMaterial({color: 0x008000 })
@@ -114,11 +120,32 @@ const enterSpace = (n) => {
             material = new THREE.MeshBasicMaterial({color: 0xf00000 })
         }
         else{
-            material = new THREE.MeshBasicMaterial({color: 0xffffff })
+            let skin1
+            const rTexture = Math.floor(Math.random() * (6 - 1 + 1)) + 1
+            if (rTexture === 1){
+                skin1 = textureLoader.load(Texture1)
+            }
+            if (rTexture === 2){
+                skin1 = textureLoader.load(Texture2)
+            }
+            if (rTexture === 3){
+                skin1 = textureLoader.load(Texture3)
+            }
+            if (rTexture === 4){
+                skin1 = textureLoader.load(Texture4)
+            }
+            if (rTexture === 5){
+                skin1 = textureLoader.load(Texture5)
+            }
+            if (rTexture === 6){
+                skin1 = textureLoader.load(Texture6)
+            }
+            material = new THREE.MeshStandardMaterial({map : skin1})
+            // material = new THREE.MeshBasicMaterial({color: 0xffffff })
         }
     
         star = new THREE.Mesh(
-            new THREE.SphereGeometry(radius,26,26),material
+            new THREE.SphereBufferGeometry(radius,26,26),material
         )
         star.position.x = ((Math.random() - 0.5) * expention)
         star.position.z = (Math.random() - 0.5) * expention
@@ -238,7 +265,14 @@ const enterSpace = (n) => {
         textureLoader: textureLoader
     })
     space.add(planet.container)
+
+    /**
+     * light
+     */
     
+    const ambientLight = new THREE.AmbientLight(0xffffff, 1.5)
+    scene.add(ambientLight)
+
     /**
      * Renderer
      */
