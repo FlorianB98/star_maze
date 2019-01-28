@@ -87,7 +87,7 @@ const enterSpace = (n) => {
     /**
      * Camera
      */
-    const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height)
+    const camera = new THREE.PerspectiveCamera(45, sizes.width / sizes.height)
     camera.position.z = position
     scene.add(camera)
     
@@ -410,13 +410,9 @@ const enterSpace = (n) => {
                 // i = starTab.length+1
             }
         }
-    
-        for (let z = 0; z<planetTab.length;z++){
-            if( planetTab[z].click === true && planetTab[z].winner === true ){
-                console.log('win')
-            }
-        }
     }
+
+    let aWin = false
     
     /**
      * Loop
@@ -475,6 +471,16 @@ const enterSpace = (n) => {
                 currentPos.position.y = planetTab[i].y
                 currentPos.position.z = planetTab[i].z
             }
+        }
+
+        if (aWin === false){
+            for (let z = 0; z<planetTab.length;z++){
+                if( planetTab[z].click === true && planetTab[z].winner === true ){
+                    alert('Successful landing')
+                    aWin = true
+                }
+            }
+            
         }
         
         
